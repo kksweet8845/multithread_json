@@ -9,8 +9,9 @@ int main(int argc, char* argv[]){
 
 
     char* inputname = argv[1];
-    outputname = argv[2];
-    finished = 0;
+    char* outputname = argv[2];
+    int finished = 0;
+    int64_t static_rows = -1;
     printf("input file: %s\n", inputname);
     printf("output file: %s\n", outputname);
 
@@ -22,7 +23,7 @@ int main(int argc, char* argv[]){
 
     printf("Preparing...");
     init_head();
-    init_threads(MAXTHS);
+    init_threads(MAXTHS, &static_rows, outputname, &finished);
     init_cond_mutex();
     printf("Finished\n");
 
@@ -44,14 +45,13 @@ int main(int argc, char* argv[]){
         // csv2json(item);
         assign_work(item);
     }
-    // printf("Finished\n");
-    while(!finished);
+    printf("Finished\n");
 
-    // pthread_mutex_lock(&output_mutex);
-    // static_rows = numlines;
-    // pthread_mutex_unlock(&output_mutex);
-    // pthread_cond_signal(&output_cond);
+    static_rows = numlines;
+    pthread_cond_signal(&output_cond);
     printf("Start outputing...");
+
+    while(!finished);
 
 
 
