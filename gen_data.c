@@ -32,8 +32,10 @@ void gen_line(char* buf){
 
 int main(int argc, char* argv[]){
 
-    char** ptr;
-    int64_t numline = strtol(argv[1], ptr, 10);
+    char* ptr;
+    printf("%d\n", argc);
+    printf("%s\n", argv[1]);
+    int64_t numline = strtol(argv[1], &ptr, 10);
     char* outputfile = argv[2];
 
     FILE* fp;
