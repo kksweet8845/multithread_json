@@ -20,8 +20,9 @@ struct TELE {
 };
 
 struct output_arg {
-    int64_t num;
+    int64_t* rows;
     char* outputfile;
+    int* finished;
 };
 
 
@@ -34,13 +35,10 @@ pthread_cond_t task_cond, finish_cond, output_cond;
 pthread_mutex_t task_mutex, finish_mutex, output_mutex;
 pthread_t *ths, *output_th;
 
-static int64_t static_rows;
-static char* outputname;
-static int32_t finished;
 
 
 void init_head();
-void init_threads(int);
+void init_threads(int, int64_t*, char*, int*);
 void init_cond_mutex();
 task_ele_ptr_t new_task(int);
 void gen_json(int32_t* arr, char**);
