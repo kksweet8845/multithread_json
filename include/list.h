@@ -32,6 +32,12 @@ extern "C" {
         const __typeof__(((type *) 0)->member) *__pmember = (ptr); \
         (type *) ((char *) __pmember - offsetof(type, member));    \
     })
+
+
+#define WRITE_ONCE(var, val) \
+    (*((volatile __typeof__(val) *)(&(var))) = (val))
+
+#define ACCESS_ONCE(x) (*(volatile __typeof__(x) *)&(x))
 #else
 #define container_of(ptr, type, member) \
     ((type *) ((char *) (ptr) -offsetof(type, member)))

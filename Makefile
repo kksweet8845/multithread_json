@@ -21,4 +21,4 @@ gen:
 	$(CC) -o gen gen_data.c
 
 clean:
-	rm -rf $(EXEC) *.o
+	rm -rf $(EXEC) *.o *.stream
