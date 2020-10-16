@@ -131,9 +131,7 @@ void* worker() {
     int i=0;
     while(1) {
         err = pthread_mutex_lock(&task_mutex);
-        // fprintf(fp, "lock %d\n", err);
         while(list_empty(&task_head)) {
-            // fprintf(fp, "pthread_cond_wait %d\n", pthread_cond_wait(&task_cond, &task_mutex));
             pthread_cond_wait(&task_cond, &task_mutex);
             // fflush(fp);
         }
@@ -141,23 +139,15 @@ void* worker() {
         list_del_init(cur);
         list_move_tail(cur, &task_thread_head);
         err = pthread_mutex_unlock(&task_mutex);
-        // fprintf(fp, "unlock error %d\n", err);
         cur = task_thread_head.next;
         list_del_init(cur);
         task = list_entry(cur, task_ele_t, list);
         task = csv2json(task);
-        // fprintf(fp, "%s\n", task->json_str);
-        // fflush(fp);
         list_del_init(cur);
         err = pthread_mutex_lock(&finish_mutex);
-        // fprintf(fp, "finish mutex error %d\n", err);
         list_move_tail(cur, &finish_head);
         err = pthread_mutex_unlock(&finish_mutex);
-        // fprintf(fp, "finish unlock %d\n", err);
-        // fprintf(fp, "i %d\n", ++i);
-        // fflush(fp);
     }
-    // fclose(fp);
     pthread_exit(NULL);
 }
 
