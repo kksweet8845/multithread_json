@@ -3,8 +3,9 @@
 #include "csv2json.h"
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
-#define MAXTHS 2
+// #define MAXTHS 4
 #define BIN_LINE 1000000
 
 char* strdup(const char *c){
@@ -17,8 +18,30 @@ char* strdup(const char *c){
 
 
 int main(int argc, char* argv[]){
-    char* inputname = argv[1];
-    char* outputname = argv[2];
+    char* inputname;
+    char* outputname;
+
+    int cmd_opt;
+    int MAXTHS;
+
+    while((cmd_opt = getopt(argc, argv, "i:o:t:")) != -1){
+        printf("%s\n", optarg);
+
+        switch(cmd_opt){
+            case 'i':
+                inputname = strdup(optarg);
+                break;
+
+            case 'o':
+                outputname = strdup(optarg);
+                break;
+            case 't':
+                MAXTHS = atoi(optarg);
+                break;
+        }
+    }
+
+
     volatile int *finished = malloc(sizeof(int));
     *finished = 0;
     int64_t static_rows = -1;
