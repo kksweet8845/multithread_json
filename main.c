@@ -6,11 +6,11 @@
 #include <getopt.h>
 
 // #define MAXTHS 4
-#define BIN_LINE 1000000
+#define BIN_LINE 100000
 
 char* strdup(const char *c){
     char* dup = malloc(strlen(c) + 1);
-    if(dup != NULL){
+    if(dup != NULL) {
         strcpy(dup, c);
     }
     return dup;
@@ -25,13 +25,10 @@ int main(int argc, char* argv[]){
     int MAXTHS;
 
     while((cmd_opt = getopt(argc, argv, "i:o:t:")) != -1){
-        printf("%s\n", optarg);
-
         switch(cmd_opt){
             case 'i':
                 inputname = strdup(optarg);
                 break;
-
             case 'o':
                 outputname = strdup(optarg);
                 break;
@@ -44,6 +41,11 @@ int main(int argc, char* argv[]){
 
     volatile int *finished = malloc(sizeof(int));
     *finished = 0;
+    volatile int *th_lines = malloc(sizeof(int) * MAXTHS);
+    for(int i=0;i<MAXTHS;i++)
+        th_lines[i] = 0;
+
+
     int64_t static_rows = -1;
     printf("input file: %s\n", inputname);
     printf("output file: %s\n", outputname);
@@ -56,7 +58,7 @@ int main(int argc, char* argv[]){
 
     printf("Preparing...");
     init_head();
-    init_threads(MAXTHS, &static_rows, outputname, finished, BIN_LINE);
+    init_threads(MAXTHS, &static_rows, outputname, finished, BIN_LINE, th_lines);
     init_cond_mutex();
     printf("Finished\n");
     // sleep(2);
@@ -84,6 +86,16 @@ int main(int argc, char* argv[]){
             }
         }
 
+        int64_t total = 0;
+        while(total != bin_line){
+            total = 0;
+            for(int64_t i=0;i<MAXTHS;i++){
+                total += th_lines[i];
+            }
+            // printf("total %d\n", total);
+        }
+        printf("total %d\n", total);
+
         if(prev_numlines == numlines){
             break;
         }
@@ -102,10 +114,10 @@ int main(int argc, char* argv[]){
             if(!list_empty(&finish_head))
                 pthread_cond_signal(&finish_cond);
             pthread_mutex_unlock(&finish_mutex);
-            pthread_mutex_lock(&task_mutex);
-            if(!list_empty(&task_head))
-                pthread_cond_signal(&task_cond);
-            pthread_mutex_unlock(&task_mutex);
+            // pthread_mutex_lock(&task_mutex);
+            // if(!list_empty(&task_head))
+            //     pthread_cond_signal(&task_cond);
+            // pthread_mutex_unlock(&task_mutex);
             sleep(1);
         }
         *finished = 0;

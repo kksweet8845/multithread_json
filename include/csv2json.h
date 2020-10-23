@@ -43,7 +43,7 @@ pthread_t *ths, *output_th;
 
 
 void init_head();
-void init_threads(int, int64_t*, char*, int*, int);
+void init_threads(int, int64_t*, char*, int*, int, int*);
 void init_cond_mutex();
 task_ele_ptr_t new_task(int);
 void gen_json(int32_t* arr, char**);

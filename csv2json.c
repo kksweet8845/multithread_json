@@ -11,10 +11,12 @@ void init_head(){
     INIT_LIST_HEAD(&finish_head);
 }
 
-void init_threads(int num_th, int64_t* rows, char* outputname, int* finished, int bin_line) {
+void init_threads(int num_th, int64_t* rows, char* outputname, int* finished, int bin_line, int* th_lines) {
     ths = (pthread_t*) malloc(sizeof(pthread_t) * num_th);
+    int* tmp;
     for(int i=0;i<num_th;i++){
-        pthread_create(ths+i, NULL, worker, NULL);
+        tmp = th_lines + i;
+        pthread_create(ths+i, NULL, worker, (void*) tmp);
     }
     output_th = (pthread_t*) malloc(sizeof(pthread_t));
 
@@ -113,27 +115,22 @@ void assign_work(task_ele_ptr_t task) {
     pthread_cond_signal(&task_cond);
 }
 
-void* worker() {
+void* worker(void* arg) {
 
-    // pid_t tid;
-    // tid = gettid();
-    // char outstream[20];
-    // memset(outstream, '\0', 20);
-    // sprintf(outstream, "%d.stream", tid);
-    // FILE* fp = fopen(outstream, "w");
+
+    int* numlines = (int*) arg;
 
     struct list_head *cur;
     task_ele_ptr_t task;
     struct list_head task_thread_head;
     INIT_LIST_HEAD(&task_thread_head);
-    // fprintf(fp, "Enter worker\n");
     int err = 0;
     int i=0;
     while(1) {
         err = pthread_mutex_lock(&task_mutex);
         while(list_empty(&task_head)) {
             pthread_cond_wait(&task_cond, &task_mutex);
-            // fflush(fp);
+            *numlines = 0;
         }
         cur = task_head.next;
         list_del_init(cur);
@@ -143,6 +140,7 @@ void* worker() {
         list_del_init(cur);
         task = list_entry(cur, task_ele_t, list);
         task = csv2json(task);
+        (*numlines)++;
         list_del_init(cur);
         err = pthread_mutex_lock(&finish_mutex);
         list_move_tail(cur, &finish_head);
@@ -177,14 +175,6 @@ void place_priority(struct list_head* node, struct list_head *head){
 
 void* output_json(void* arg){
 
-    // pid_t tid;
-    // tid = gettid();
-    // char outstream[20];
-    // memset(outstream, '\0', 20);
-    // sprintf(outstream, "%d.stream", tid);
-    // FILE* s = fopen(outstream, "w");
-
-
     struct output_arg *o = (struct output_arg*) arg;
     int64_t* rows = o->rows;
     char* outputname = o->outputfile;
@@ -195,8 +185,6 @@ void* output_json(void* arg){
     struct list_head output_th_head;
     INIT_LIST_HEAD(&output_th_head);
     int64_t i = 0, index=0;
-    // fprintf(s, "before lock\n");
-    // fflush(s);
     index=0;
 
     task_ele_ptr_t node_entry;
@@ -207,29 +195,21 @@ void* output_json(void* arg){
 
     fp = fopen(outputname, "w");
     fprintf(fp, "[\n");
-    while(1){
+    while(1) {
 
         pthread_mutex_lock(&output_mutex);
         while(*rows == -1) {
             pthread_cond_wait(&output_cond, &output_mutex);
-            // fprintf(s, "inside lock %d\n", *rows);
         }
-        // fprintf(s, "skip output cond wait\n");
-        // fflush(s);
         pthread_mutex_unlock(&output_mutex);
 
-        // fprintf(s, "*row %d\n", *rows);
-        // fflush(s);
         for(i=0;i<bin_line;i++){
             task_arr[i] = NULL;
         }
 
         while(index < *rows) {
-            // fprintf(s, "before lock\n");
             int err = pthread_mutex_lock(&finish_mutex);
-            // fprintf(s, "%d after lock err\n", err);
             while(list_empty(&finish_head)) {
-                // fprintf(s, "list empty\n");
                 pthread_cond_wait(&finish_cond, &finish_mutex);
             }
             cur = finish_head.next;
@@ -238,26 +218,23 @@ void* output_json(void* arg){
             node_entry = list_entry(cur, task_ele_t, list);
             task_arr[node_entry->index % bin_line] = node_entry;
             if(task_arr[node_entry->index % bin_line ] != NULL) index++;
-            // fprintf(s, "%p %d\n", node_entry, node_entry->index);
             fflush(stdout);
-            // fprintf(s, "%d\n", index);
         }
 
-        for(i=0;i<bin_line && i < *rows;i++){
+        for(i=0;i<bin_line && i < *rows;i++) {
             item = task_arr[i];
             fwrite(item->json_str, strlen(item->json_str)*sizeof(char), 1, fp);
             free(item->csv_str);
             free(item->json_str);
             free(item);
-            if(i != bin_line - 1){
+            if(i != bin_line - 1) {
                 fprintf(fp, ",\n");
-            }else{
+            }else {
                 fprintf(fp, "\n");
             }
             task_arr[i] = NULL;
         }
         *finished = 1;
-        // fprintf(s, "%d\n", *finished);
         *rows = -1;
     }
     fprintf(fp, "]");
