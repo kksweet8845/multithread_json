@@ -3,8 +3,9 @@
 #include "csv2json.h"
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
-#define MAXTHS 2
+// #define MAXTHS 2
 #define BIN_LINE 1000000
 
 char* strdup(const char *c){
@@ -17,13 +18,34 @@ char* strdup(const char *c){
 
 
 int main(int argc, char* argv[]){
-    char* inputname = argv[1];
-    char* outputname = argv[2];
+    char* inputname;
+    char* outputname;
+
+
+    int cmd_opt;
+    int MAXTHS;
+
+    while((cmd_opt = getopt(argc, argv, "i:o:t:")) != -1){
+        printf("%s\n", optarg);
+        switch(cmd_opt){
+            case 'i':
+                inputname = strdup(optarg);
+                break;
+            case 'o':
+                outputname = strdup(optarg);
+                break;
+            case 't':
+                MAXTHS = atoi(optarg);
+                break;
+        }
+    }
+
     volatile int *finished = malloc(sizeof(int));
     *finished = 0;
     int64_t static_rows = -1;
     printf("input file: %s\n", inputname);
     printf("output file: %s\n", outputname);
+    printf("MAXTHS : %d\n", MAXTHS);
 
     FILE* fp;
     fp = fopen(inputname, "r");
@@ -73,8 +95,9 @@ int main(int argc, char* argv[]){
         pthread_mutex_unlock(&output_mutex);
         pthread_cond_signal(&output_cond);
         printf("Start outputing...");
+        int i_i = 0;
         while(!*finished) {
-            printf("%d\n", ACCESS_ONCE(*finished));
+            printf("%d %d\n", ACCESS_ONCE(*finished), i_i++);
             pthread_mutex_lock(&finish_mutex);
             if(!list_empty(&finish_head))
                 pthread_cond_signal(&finish_cond);
