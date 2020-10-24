@@ -36,8 +36,8 @@ struct output_arg {
 /* Some static variable */
 static struct list_head task_head;
 static struct list_head finish_head;
-pthread_cond_t task_cond, finish_cond, output_cond;
-pthread_mutex_t task_mutex, finish_mutex, output_mutex;
+pthread_cond_t task_cond, finish_cond, output_cond, end_cond, task_finish_cond, output_finish_cond;
+pthread_mutex_t task_mutex, finish_mutex, output_mutex, end_mutex, task_finish_mutex, output_finish_mutex;
 pthread_t *ths, *output_th;
 
 
@@ -53,6 +53,8 @@ void assign_work(task_ele_ptr_t);
 void* worker();
 void place_priority(struct list_head*, struct list_head*);
 void* output_json();
+int check_task_empty();
+int check_finish_empty();
 
 
 
