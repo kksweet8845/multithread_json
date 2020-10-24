@@ -22,3 +22,7 @@ gen:
 
 clean:
 	rm -rf $(EXEC) *.o *.stream
+
+re:
+	make clean
+	make all
