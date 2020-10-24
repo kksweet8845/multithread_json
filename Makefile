@@ -1,5 +1,5 @@
 CC = gcc -std=c99
-CCFLAGS = -Wall -g -I./include
+CCFLAGS = -Wall -g -I./include  -D _GNU_SOURCE 
 
 
 EXEC = main

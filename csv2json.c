@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-
+#include <time.h>
 
 
 void init_head(){
@@ -153,6 +153,7 @@ void* worker(void* arg) {
     int iter = 0;
     int initial = 1;
     int total = 0;
+    struct timespec timeout = {.tv_nsec = 0, .tv_sec = 1};
     while(1) {
         err = pthread_mutex_lock(&task_mutex);
         while(list_empty(&task_head)) {
@@ -165,7 +166,7 @@ void* worker(void* arg) {
             }
             // fprintf(fp, "waiting\n");
             // fflush(fp);
-            pthread_cond_wait(&task_cond, &task_mutex);
+            pthread_cond_timedwait(&task_cond, &task_mutex, &timeout);
         }
         // cur = task_head.next;
         num_task = 0;
@@ -280,53 +281,20 @@ void* output_json(void* arg){
         if(*rows == -2)
             break;
 
-        printf("before outputing\n");
-
-
-        if(*rows == -2)
-            break;
-
-        // pthread_mutex_lock(&finish_mutex);
-        // while(list_empty(&finish_head)) {
-        //         fprintf(s, "waiting \n");
-        //         fflush(s);
-        //         pthread_cond_wait(&finish_cond, &finish_mutex);
-        // }
-        // fprintf(s, "before list for entry\n");
-        // fflush(s);
-        // int n = 0;
-        // list_for_each_entry(item, &finish_head, list){
-        //     fprintf(s, "index %d\n", item->index);
-        //     fflush(s);
-        //     task_arr[item->index % bin_line] = item;
-        //     n++;
-        // }
-        // // fprintf(s, "n task %d\n", n);
-        // // fflush(s);
-        // pthread_mutex_unlock(&finish_mutex);
-
-
         while(index < *rows) {
             // printf("output>> %d, %d\n", index, *rows);
             int err = pthread_mutex_lock(&finish_mutex);
             while(list_empty(&finish_head)) {
-                // fprintf(s, "waiting %d\n", check_finish_empty());
-                // fflush(s);
-                // printf("output>> waiting\n");
                 pthread_cond_timedwait(&finish_cond, &finish_mutex, &timeout);
             }
             list_splice_tail_init(&finish_head, &output_th_head);
             pthread_mutex_unlock(&finish_mutex);
             list_for_each_entry(item, &output_th_head, list){
-                // fprintf(s, "index %d\n", item->index);
-                // fflush(s);
                 task_arr[item->index % bin_line] = item;
                 index++;
-                // if(task_arr[item->index % bin_line] != NULL) index++;
             }
             INIT_LIST_HEAD(&output_th_head);
         }
-        // printf("output>> index : %d\n", index);
 
         for(i=0;i < (*rows - pre_index);i++) {
             item = task_arr[i];
@@ -343,11 +311,8 @@ void* output_json(void* arg){
             task_arr[i] = NULL;
         }
         pre_index = *rows;
-        // *finished = 1;
         *rows = -1;
         INIT_LIST_HEAD(&finish_head);
-        // fprintf(s, "signal \n");
-        // fflush(s);
         pthread_cond_signal(&output_finish_cond);
     }
     fprintf(fp, "]");
