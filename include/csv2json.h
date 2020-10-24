@@ -36,8 +36,8 @@ struct output_arg {
 /* Some static variable */
 static struct list_head task_head;
 static struct list_head finish_head;
-pthread_cond_t task_cond, finish_cond, output_cond;
-pthread_mutex_t task_mutex, finish_mutex, output_mutex;
+pthread_cond_t task_cond, finish_cond, output_cond, end_cond;
+pthread_mutex_t task_mutex, finish_mutex, output_mutex, end_mutex;
 pthread_t *ths, *output_th;
 
 

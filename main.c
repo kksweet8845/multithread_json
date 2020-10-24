@@ -51,7 +51,7 @@ int main(int argc, char* argv[]){
     FILE* fp;
     fp = fopen(inputname, "r");
 
-    char* line = (char*)malloc(sizeof(char) * 1024);
+    char* line = (char*) malloc(sizeof(char) * 1024);
     memset(line, '\0', 1024);
 
     printf("Preparing...");
@@ -85,6 +85,14 @@ int main(int argc, char* argv[]){
         }
 
         if(prev_numlines == numlines){
+            pthread_mutex_lock(&output_mutex);
+            static_rows = -2;
+            pthread_mutex_unlock(&output_mutex);
+            pthread_cond_signal(&output_cond);
+            pthread_mutex_lock(&end_mutex);
+            printf("waiting\n");
+            pthread_cond_wait(&end_cond, &end_mutex);
+            pthread_mutex_unlock(&end_mutex);
             break;
         }
         printf("%d\n", prev_numlines);
@@ -102,16 +110,17 @@ int main(int argc, char* argv[]){
             if(!list_empty(&finish_head))
                 pthread_cond_signal(&finish_cond);
             pthread_mutex_unlock(&finish_mutex);
-            pthread_mutex_lock(&task_mutex);
-            if(!list_empty(&task_head))
-                pthread_cond_signal(&task_cond);
-            pthread_mutex_unlock(&task_mutex);
+            // pthread_mutex_lock(&task_mutex);
+            // if(!list_empty(&task_head))
+            //     pthread_cond_signal(&task_cond);
+            // pthread_mutex_unlock(&task_mutex);
             sleep(1);
         }
         *finished = 0;
         printf("Iteration over\n");
     }
     fclose(fp);
+
 
     return 0;
 }
